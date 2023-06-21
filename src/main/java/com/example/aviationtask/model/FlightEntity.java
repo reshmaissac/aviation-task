@@ -1,7 +1,11 @@
-import lombok.Data;
+package com.example.aviationtask.model;
 
-@Data
-public class Flight {
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class FlightEntity {
     private int flightId;
     private int flightNumber;
     private String departureAirportIATACode;

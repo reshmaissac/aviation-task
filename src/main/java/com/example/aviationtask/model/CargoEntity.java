@@ -1,3 +1,9 @@
+package com.example.aviationtask.model;
+
+import java.util.List;
+
+import lombok.Data;
+
 @Data
 public class CargoEntity {
 
@@ -7,18 +13,5 @@ public class CargoEntity {
 }
 
 
-@Data
-public class Baggage {
-    private int id;
-    private int weight;
-    private String weightUnit;
-    private int pieces;
-}
 
-@Data
-public class CargoItem {
-    private int id;
-    private int weight;
-    private String weightUnit;
-    private int pieces;
-}
+
