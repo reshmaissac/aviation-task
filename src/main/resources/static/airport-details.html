@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Airport Details</title>
+</head>
+<body>
+    <h1>Airport Details</h1>
+    <h2>Airport Code: <span th:text="${airportCode}"></span></h2>
+    <h2>Departure Date: <span th:text="${departureDate}"></span></h2>
+    <h2>Departing Flights: <span th:text="${departingFlights}"></span></h2>
+    <h2>Arriving Flights: <span th:text="${arrivingFlights}"></span></h2>
+    <h2>Arriving Baggage Pieces: <span th:text="${arrivingBaggagePieces}"></span></h2>
+    <h2>Departing Baggage Pieces: <span th:text="${departingBaggagePieces}"></span></h2>
+</body>
+</html>

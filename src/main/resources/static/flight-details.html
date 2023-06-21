@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Flight Details</title>
+</head>
+<body>
+    <h1>Flight Details</h1>
+    <table>
+        <tr>
+            <th>Flight Number</th>
+            <th>Departure Airport</th>
+            <th>Arrival Airport</th>
+            <th>Departure Date</th>
+        </tr>
+        <tr>
+            <td th:text="${flight.flightNumber}"></td>
+            <td th:text="${flight.departureAirportIATACode}"></td>
+            <td th:text="${flight.arrivalAirportIATACode}"></td>
+            <td th:text="${flight.departureDate}"></td>
+        </tr>
+    </table>
+    <h2>Cargo Weight: <span th:text="${cargoWeight}"></span></h2>
+    <h2>Baggage Weight: <span th:text="${baggageWeight}"></span></h2>
+    <h2>Total Weight: <span th:text="${totalWeight}"></span></h2>
+</body>
+</html>
