@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Data
 @Entity
 @NoArgsConstructor
-public class Baggage {
+public class CargoItem {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long id;
@@ -25,7 +25,7 @@ public class Baggage {
 	@JoinColumn(name = "flight_id")
 	private FlightEntity flight;
 
-	public Baggage(int weight, String weightUnit, int pieces, FlightEntity flight) {
+	public CargoItem(int weight, String weightUnit, int pieces, FlightEntity flight) {
 		this.weight = weight;
 		this.weightUnit = weightUnit;
 		this.pieces = pieces;

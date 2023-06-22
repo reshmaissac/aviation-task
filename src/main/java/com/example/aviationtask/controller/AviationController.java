@@ -8,10 +8,11 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.example.aviationtask.model.AirportResponse;
-import com.example.aviationtask.model.FlightEntity;
-import com.example.aviationtask.model.FlightResponse;
+import com.example.aviationtask.dto.AirportResponse;
+import com.example.aviationtask.dto.FlightEntityDto;
+import com.example.aviationtask.dto.FlightResponse;
 import com.example.aviationtask.services.AviationService;
+import com.example.aviationtask.services.DataLoadService;
 
 @Controller
 class AirportController {
@@ -19,9 +20,12 @@ class AirportController {
 	@Autowired
 	AviationService aviationService;
 
+	@Autowired
+	DataLoadService dataLoadService;
+
 	@GetMapping("/")
 	public String home(Model model) {
-		List<FlightEntity> flights = aviationService.getFlights();
+		List<FlightEntityDto> flights = dataLoadService.getFlights();
 		model.addAttribute("flights", flights);
 		return "index";
 	}

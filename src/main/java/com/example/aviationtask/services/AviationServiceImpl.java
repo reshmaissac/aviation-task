@@ -1,75 +1,60 @@
 package com.example.aviationtask.services;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.PostConstruct;
+import javax.transaction.Transactional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.example.aviationtask.model.AirportResponse;
+import com.example.aviationtask.dto.AirportResponse;
+import com.example.aviationtask.dto.FlightEntityDto;
+import com.example.aviationtask.dto.FlightResponse;
 import com.example.aviationtask.model.Baggage;
-import com.example.aviationtask.model.Cargo;
-import com.example.aviationtask.model.CargoEntity;
+import com.example.aviationtask.model.CargoItem;
 import com.example.aviationtask.model.FlightEntity;
-import com.example.aviationtask.model.FlightResponse;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.example.aviationtask.repository.BaggageRepository;
+import com.example.aviationtask.repository.CargoRepository;
+import com.example.aviationtask.repository.FlightRepository;
+
+import lombok.AllArgsConstructor;
 
 @Service
+@Transactional
+@AllArgsConstructor
 public class AviationServiceImpl implements AviationService {
 
-	private List<FlightEntity> flights;
-	private List<CargoEntity> cargoList;
+	private final FlightRepository flightRepository;
+	private final CargoRepository cargoRepository;
+	private final BaggageRepository baggageRepository;
 
-	@Autowired
-	private ObjectMapper objectMapper;
-
-	@PostConstruct
-	private void loadDataFromJson() {
-		try {
-			ClassLoader classLoader = getClass().getClassLoader();
-			flights = objectMapper.readValue(new File(classLoader.getResource("flights.json").getFile()),
-					new TypeReference<List<FlightEntity>>() {
-					});
-			cargoList = objectMapper.readValue(new File(classLoader.getResource("cargo.json").getFile()),
-					new TypeReference<List<CargoEntity>>() {
-					});
-			System.out.println("Data Loaded!!");
-		} catch (IOException e) {
-			e.printStackTrace();
-			flights = new ArrayList<>();
-			cargoList = new ArrayList<>();
-		}
-	}
-
+	/**
+	 * Task 1.
+	 */
 	@Override
 	public FlightResponse getFlightDetailsByNumbAndDate(int flightNumber, String departureDate) {
 		FlightResponse flightResponse = new FlightResponse();
-		FlightEntity requestedFlight = null;
-		for (FlightEntity flight : flights) {
-			if (flight.getFlightNumber() == flightNumber && flight.getDepartureDate().equals(departureDate)) {
-				requestedFlight = flight;
-				break;
-			}
-		}
+		FlightEntity requestedFlight = flightRepository.findByFlightNumberAndDepartureDate(flightNumber, departureDate);
 
-		CargoEntity cargo = getCargoByFlightId(requestedFlight.getFlightId(), cargoList);
+		List<CargoItem> cargoList = cargoRepository.findByFlightId(requestedFlight.getId());
+		int cargoWeight = calculateCargoWeight(cargoList);
 
-		int cargoWeight = calculateCargoWeight(cargo);
-		int baggageWeight = calculateBaggageWeight(cargo);
+		List<Baggage> baggageList = baggageRepository.findByFlightId(requestedFlight.getId());
+		int baggageWeight = calculateBaggageWeight(baggageList);
 		int totalWeight = cargoWeight + baggageWeight;
 
-		flightResponse.setFlight(requestedFlight);
+		FlightEntityDto reqflightEntityDto = new FlightEntityDto(requestedFlight.getFlightNumber(),
+				requestedFlight.getDepartureDate(), requestedFlight.getDepartureAirportIATACode(),
+				requestedFlight.getArrivalAirportIATACode());
+		flightResponse.setFlight(reqflightEntityDto);
 		flightResponse.setCargoWeight(cargoWeight);
 		flightResponse.setBaggageWeight(baggageWeight);
 		flightResponse.setTotalWeight(totalWeight);
 		return flightResponse;
 	}
 
+	/**
+	 * Task 2.
+	 */
 	@Override
 	public AirportResponse getAirportDetailsByIATACodeAndDate(String airportCode, String departureDate) {
 
@@ -80,18 +65,20 @@ public class AviationServiceImpl implements AviationService {
 		int arrivingBaggagePieces = 0;
 		int departingBaggagePieces = 0;
 
-		for (FlightEntity flight : flights) {
+		List<FlightEntity> flightsList = flightRepository.findAll();
+		for (FlightEntity flight : flightsList) {
+			List<Baggage> baggageList = baggageRepository.findByFlightId(flight.getId());
 			if (flight.getDepartureAirportIATACode().equals(airportCode)
 					&& flight.getDepartureDate().contains(departureDate)) {
 				departingFlights++;
-				CargoEntity cargo = getCargoByFlightId(flight.getFlightId(), cargoList);
-				departingBaggagePieces += calculateTotalBaggagePieces(cargo);
+
+				departingBaggagePieces += calculateTotalBaggagePieces(baggageList);
 			}
 			if (flight.getArrivalAirportIATACode().equals(airportCode)
 					&& flight.getDepartureDate().contains(departureDate)) {
 				arrivingFlights++;
-				CargoEntity cargo = getCargoByFlightId(flight.getFlightId(), cargoList);
-				arrivingBaggagePieces += calculateTotalBaggagePieces(cargo);
+
+				arrivingBaggagePieces += calculateTotalBaggagePieces(baggageList);
 			}
 		}
 		airportResponse.setNumberOfFlightsArriving(arrivingFlights);
@@ -102,47 +89,46 @@ public class AviationServiceImpl implements AviationService {
 		return airportResponse;
 	}
 
-	private CargoEntity getCargoByFlightId(int flightId, List<CargoEntity> cargoList) {
-		for (CargoEntity cargo : cargoList) {
-			if (cargo.getFlightId() == flightId) {
-				return cargo;
-			}
-		}
-		return null;
-	}
-
-	private int calculateCargoWeight(CargoEntity cargo) {
+	/**
+	 * Method to calculate total CargoWeight.
+	 * 
+	 * @param cargoList
+	 * @return
+	 */
+	private int calculateCargoWeight(List<CargoItem> cargoList) {
 		int cargoWeight = 0;
-		if (cargo != null && cargo.getCargo() != null) {
-			for (Cargo cargoItem : cargo.getCargo()) {
-				cargoWeight += cargoItem.getWeight();
-			}
+		for (CargoItem cargoItem : cargoList) {
+			cargoWeight += cargoItem.getWeight();
 		}
 		return cargoWeight;
 	}
 
-	private int calculateBaggageWeight(CargoEntity cargo) {
+	/**
+	 * Method to calculate total BaggageWeight.
+	 * 
+	 * @param baggageList
+	 * @return
+	 */
+	private int calculateBaggageWeight(List<Baggage> baggageList) {
 		int baggageWeight = 0;
-		if (cargo != null && cargo.getBaggage() != null) {
-			for (Baggage baggage : cargo.getBaggage()) {
-				baggageWeight += baggage.getWeight();
-			}
+		for (Baggage baggage : baggageList) {
+			baggageWeight += baggage.getWeight();
 		}
 		return baggageWeight;
 	}
 
-	private int calculateTotalBaggagePieces(CargoEntity cargo) {
+	/**
+	 * Method to calculate Total BaggagePieces.
+	 * 
+	 * @param baggageList
+	 * @return
+	 */
+	private int calculateTotalBaggagePieces(List<Baggage> baggageList) {
 		int totalBaggagePieces = 0;
-		if (cargo != null && cargo.getBaggage() != null) {
-			for (Baggage baggage : cargo.getBaggage()) {
-				totalBaggagePieces += baggage.getPieces();
-			}
+		for (Baggage baggage : baggageList) {
+			totalBaggagePieces += baggage.getPieces();
 		}
 		return totalBaggagePieces;
-	}
-
-	public List<FlightEntity> getFlights() {
-		return flights;
 	}
 
 }
