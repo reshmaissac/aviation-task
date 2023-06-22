@@ -20,4 +20,5 @@ h2 database,
 logger,
 thymeleaf, 
 functional programming,
-Junit etc.
+Junit,
+Mockito etc.
