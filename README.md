@@ -19,4 +19,5 @@ Lombok,
 h2 database,
 logger,
 thymeleaf, 
-functional programming etc
+functional programming,
+Junit etc.
