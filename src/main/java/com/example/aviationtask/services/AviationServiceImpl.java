@@ -112,11 +112,8 @@ public class AviationServiceImpl implements AviationService {
 	 * @return
 	 */
 	private int calculateCargoWeight(List<CargoItem> cargoList) {
-		int cargoWeight = 0;
-		for (CargoItem cargoItem : cargoList) {
-			cargoWeight += cargoItem.getWeight();
-		}
-		return cargoWeight;
+
+		return cargoList.stream().mapToInt(CargoItem::getWeight).sum();
 	}
 
 	/**
@@ -126,11 +123,8 @@ public class AviationServiceImpl implements AviationService {
 	 * @return
 	 */
 	private int calculateBaggageWeight(List<Baggage> baggageList) {
-		int baggageWeight = 0;
-		for (Baggage baggage : baggageList) {
-			baggageWeight += baggage.getWeight();
-		}
-		return baggageWeight;
+
+		return baggageList.stream().mapToInt(Baggage::getWeight).sum();
 	}
 
 	/**
@@ -140,11 +134,8 @@ public class AviationServiceImpl implements AviationService {
 	 * @return
 	 */
 	private int calculateTotalBaggagePieces(List<Baggage> baggageList) {
-		int totalBaggagePieces = 0;
-		for (Baggage baggage : baggageList) {
-			totalBaggagePieces += baggage.getPieces();
-		}
-		return totalBaggagePieces;
+
+		return baggageList.stream().mapToInt(Baggage::getPieces).sum();
 	}
 
 }
