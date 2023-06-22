@@ -4,6 +4,8 @@ import java.util.List;
 
 import javax.transaction.Transactional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.example.aviationtask.dto.AirportResponse;
@@ -23,6 +25,10 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class AviationServiceImpl implements AviationService {
 
+	// private static final Logger logger =
+	// LogManager.getLogger(AviationServiceImpl.class);
+	private static final Logger logger = LoggerFactory.getLogger(AviationServiceImpl.class);
+
 	private final FlightRepository flightRepository;
 	private final CargoRepository cargoRepository;
 	private final BaggageRepository baggageRepository;
@@ -32,23 +38,29 @@ public class AviationServiceImpl implements AviationService {
 	 */
 	@Override
 	public FlightResponse getFlightDetailsByNumbAndDate(int flightNumber, String departureDate) {
+
 		FlightResponse flightResponse = new FlightResponse();
-		FlightEntity requestedFlight = flightRepository.findByFlightNumberAndDepartureDate(flightNumber, departureDate);
+		try {
+			FlightEntity requestedFlight = flightRepository.findByFlightNumberAndDepartureDate(flightNumber,
+					departureDate);
 
-		List<CargoItem> cargoList = cargoRepository.findByFlightId(requestedFlight.getId());
-		int cargoWeight = calculateCargoWeight(cargoList);
+			List<CargoItem> cargoList = cargoRepository.findByFlightId(requestedFlight.getId());
+			int cargoWeight = calculateCargoWeight(cargoList);
 
-		List<Baggage> baggageList = baggageRepository.findByFlightId(requestedFlight.getId());
-		int baggageWeight = calculateBaggageWeight(baggageList);
-		int totalWeight = cargoWeight + baggageWeight;
+			List<Baggage> baggageList = baggageRepository.findByFlightId(requestedFlight.getId());
+			int baggageWeight = calculateBaggageWeight(baggageList);
+			int totalWeight = cargoWeight + baggageWeight;
 
-		FlightEntityDto reqflightEntityDto = new FlightEntityDto(requestedFlight.getFlightNumber(),
-				requestedFlight.getDepartureDate(), requestedFlight.getDepartureAirportIATACode(),
-				requestedFlight.getArrivalAirportIATACode());
-		flightResponse.setFlight(reqflightEntityDto);
-		flightResponse.setCargoWeight(cargoWeight);
-		flightResponse.setBaggageWeight(baggageWeight);
-		flightResponse.setTotalWeight(totalWeight);
+			FlightEntityDto reqflightEntityDto = new FlightEntityDto(requestedFlight.getFlightNumber(),
+					requestedFlight.getDepartureDate(), requestedFlight.getDepartureAirportIATACode(),
+					requestedFlight.getArrivalAirportIATACode());
+			flightResponse.setFlight(reqflightEntityDto);
+			flightResponse.setCargoWeight(cargoWeight);
+			flightResponse.setBaggageWeight(baggageWeight);
+			flightResponse.setTotalWeight(totalWeight);
+		} catch (Exception e) {
+			logger.error("Error occurred while fetching flight details: {}", e.getMessage());
+		}
 		return flightResponse;
 	}
 
@@ -59,32 +71,36 @@ public class AviationServiceImpl implements AviationService {
 	public AirportResponse getAirportDetailsByIATACodeAndDate(String airportCode, String departureDate) {
 
 		AirportResponse airportResponse = new AirportResponse();
+		try {
+			int departingFlights = 0;
+			int arrivingFlights = 0;
+			int arrivingBaggagePieces = 0;
+			int departingBaggagePieces = 0;
 
-		int departingFlights = 0;
-		int arrivingFlights = 0;
-		int arrivingBaggagePieces = 0;
-		int departingBaggagePieces = 0;
+			List<FlightEntity> flightsList = flightRepository.findAll();
+			for (FlightEntity flight : flightsList) {
+				List<Baggage> baggageList = baggageRepository.findByFlightId(flight.getId());
+				if (flight.getDepartureAirportIATACode().equals(airportCode)
+						&& flight.getDepartureDate().contains(departureDate)) {
+					departingFlights++;
 
-		List<FlightEntity> flightsList = flightRepository.findAll();
-		for (FlightEntity flight : flightsList) {
-			List<Baggage> baggageList = baggageRepository.findByFlightId(flight.getId());
-			if (flight.getDepartureAirportIATACode().equals(airportCode)
-					&& flight.getDepartureDate().contains(departureDate)) {
-				departingFlights++;
+					departingBaggagePieces += calculateTotalBaggagePieces(baggageList);
+				}
+				if (flight.getArrivalAirportIATACode().equals(airportCode)
+						&& flight.getDepartureDate().contains(departureDate)) {
+					arrivingFlights++;
 
-				departingBaggagePieces += calculateTotalBaggagePieces(baggageList);
+					arrivingBaggagePieces += calculateTotalBaggagePieces(baggageList);
+				}
 			}
-			if (flight.getArrivalAirportIATACode().equals(airportCode)
-					&& flight.getDepartureDate().contains(departureDate)) {
-				arrivingFlights++;
+			airportResponse.setNumberOfFlightsArriving(arrivingFlights);
+			airportResponse.setNumberOfFlightsDeparting(departingFlights);
+			airportResponse.setTotalPiecesOfBaggageArriving(arrivingBaggagePieces);
+			airportResponse.setTotalPiecesOfBaggageDeparting(departingBaggagePieces);
 
-				arrivingBaggagePieces += calculateTotalBaggagePieces(baggageList);
-			}
+		} catch (Exception e) {
+			logger.error("Error occurred while fetching airport details: {}", e.getMessage());
 		}
-		airportResponse.setNumberOfFlightsArriving(arrivingFlights);
-		airportResponse.setNumberOfFlightsDeparting(departingFlights);
-		airportResponse.setTotalPiecesOfBaggageArriving(arrivingBaggagePieces);
-		airportResponse.setTotalPiecesOfBaggageDeparting(departingBaggagePieces);
 
 		return airportResponse;
 	}

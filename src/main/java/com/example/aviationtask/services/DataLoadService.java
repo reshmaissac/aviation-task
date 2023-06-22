@@ -1,6 +1,5 @@
 package com.example.aviationtask.services;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -10,12 +9,11 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.transaction.Transactional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.ResourceLoaderAware;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileCopyUtils;
 
@@ -35,9 +33,9 @@ import lombok.AllArgsConstructor;
 @Service
 @Transactional
 @AllArgsConstructor
-public class DataLoadService implements ResourceLoaderAware {
+public class DataLoadService {
 
-	private ResourceLoader resourceLoader;
+	Logger logger = LoggerFactory.getLogger(DataLoadService.class); 
 
 	private final FlightRepository flightRepository;
 	private final BaggageRepository baggageRespository;
@@ -72,39 +70,24 @@ public class DataLoadService implements ResourceLoaderAware {
 		try {
 			// Read flights.json file
 			ClassPathResource flightsResource = new ClassPathResource(flightsJsonPath);
-	        byte[] flightsJsonBytes = FileCopyUtils.copyToByteArray(flightsResource.getInputStream());
-	        String flightsJson = new String(flightsJsonBytes, StandardCharsets.UTF_8);
-	        flights = objectMapper.readValue(flightsJson, new TypeReference<List<FlightEntityDto>>() {});
-	        flights.forEach(this::save);
-	        
-	        
-	        
-//			Resource flightsJsonResource = resourceLoader.getResource(flightsJsonPath);
-//			File flightsJsonFile = flightsJsonResource.getFile();
-//			String flightsJson = new String(FileCopyUtils.copyToByteArray(flightsJsonFile), StandardCharsets.UTF_8);
-//			flights = objectMapper.readValue(flightsJson, new TypeReference<List<FlightEntityDto>>() {
-//			});
-//			flights.forEach(this::save);
+			byte[] flightsJsonBytes = FileCopyUtils.copyToByteArray(flightsResource.getInputStream());
+			String flightsJson = new String(flightsJsonBytes, StandardCharsets.UTF_8);
+			flights = objectMapper.readValue(flightsJson, new TypeReference<List<FlightEntityDto>>() {
+			});
+			flights.forEach(this::save);
 
 			// Read cargo.json file
-	        ClassPathResource cargoResource = new ClassPathResource(cargoJsonPath);
-	        byte[] cargoJsonBytes = FileCopyUtils.copyToByteArray(cargoResource.getInputStream());
-	        String cargoJson = new String(cargoJsonBytes, StandardCharsets.UTF_8);
-	        cargoList = objectMapper.readValue(cargoJson, new TypeReference<List<FlightCargoDto>>() {});
-	        cargoList.forEach(this::save);
-	        
-	        
-	        
-//			Resource cargoJsonResource = resourceLoader.getResource(cargoJsonPath);
-//			File cargoJsonFile = cargoJsonResource.getFile();
-//			String cargoJson = new String(FileCopyUtils.copyToByteArray(cargoJsonFile), StandardCharsets.UTF_8);
-//			cargoList = objectMapper.readValue(cargoJson, new TypeReference<List<FlightCargoDto>>() {
-//			});
-//			cargoList.forEach(this::save);
+			ClassPathResource cargoResource = new ClassPathResource(cargoJsonPath);
+			byte[] cargoJsonBytes = FileCopyUtils.copyToByteArray(cargoResource.getInputStream());
+			String cargoJson = new String(cargoJsonBytes, StandardCharsets.UTF_8);
+			cargoList = objectMapper.readValue(cargoJson, new TypeReference<List<FlightCargoDto>>() {
+			});
+			cargoList.forEach(this::save);
 
-			System.out.println("Data Loaded!!");
+			logger.info("Data Loaded from json files!!");
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.error("Error occurred while loading data from json files: {}", e.getMessage());
+			//e.printStackTrace();
 			flights = new ArrayList<>();
 			cargoList = new ArrayList<>();
 		}
@@ -133,12 +116,6 @@ public class DataLoadService implements ResourceLoaderAware {
 
 	public List<FlightEntityDto> getFlights() {
 		return flights;
-	}
-
-	@Override
-	public void setResourceLoader(ResourceLoader resourceLoader) {
-		this.resourceLoader = resourceLoader;
-
 	}
 
 }
