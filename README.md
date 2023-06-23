@@ -7,7 +7,7 @@ Task for Smart4Aviations
 
 2. Open in web browser : http://localhost:8080/ 
 
-3.To view database tables : http://localhost:8080/h2-console 
+3. To view database tables : http://localhost:8080/h2-console 
 # The following frameworks and libraries are used to develop this application:
 
 Spring boot, 
