@@ -1,5 +1,3 @@
-# aviation-task
-Task for Smart4Aviations
 
 # How to run the application. (Requirement : java 11 required)
 
